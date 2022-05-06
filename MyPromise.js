@@ -1,8 +1,8 @@
 const STATE = {
   // states of the promise
-  FULFILLED: 'fulfilled',
-  REJECTED: 'rejected',
-  PENDING: 'pending',
+  FULFILLED: "fulfilled",
+  REJECTED: "rejected",
+  PENDING: "pending",
 };
 
 class MyPromise {
@@ -26,15 +26,15 @@ class MyPromise {
   }
 
   #runCallbacks() {
-    if (STATE === STATE.FULFILLED) {
-      this.#catchcbs.forEach((cb) => {
+    if (this.#state === STATE.FULFILLED) {
+      this.#thencbs.forEach((cb) => {
         cb(this.#value); // run all then cbs for success state
       });
     }
 
     this.#thencbs = []; // remove all the cbs after execution to avoid re-running them.
 
-    if (STATE === STATE.REJECTED) {
+    if (this.#state === STATE.REJECTED) {
       this.#catchcbs.forEach((cb) => {
         cb(this.#value); // run all catch cbs for fail state
       });
@@ -45,7 +45,7 @@ class MyPromise {
   // defining the two states (private methods)
   #onSuccess(value) {
     queueMicrotask(() => {
-      if (STATE !== STATE.PENDING) return; // as we want resolve and reject to run only once in a promise.
+      if (this.#state !== STATE.PENDING) return; // as we want resolve and reject to run only once in a promise.
 
       // promise can contain more promises inside them so to handle them we call then after checking that it is indeed a instance of a promise.
       if (value instanceof MyPromise) {
@@ -60,7 +60,7 @@ class MyPromise {
 
   #onFail(value) {
     queueMicrotask(() => {
-      if (STATE !== STATE.PENDING) return; // as we want resolve and reject to run only once in a promise.
+      if (this.#state !== STATE.PENDING) return; // as we want resolve and reject to run only once in a promise.
 
       // promise can contain more promises inside them so to handle them we call then after checking that it is indeed a instance of a promise.
       if (value instanceof MyPromise) {
@@ -84,9 +84,9 @@ class MyPromise {
     // contains a callback with next set of actions to be performed.
     // we define an array of callbacks because a promise can have multiple callback uppon successful execution.
 
-    return new Promise((resolve, reject) => {
+    return new MyPromise((resolve, reject) => {
       // push callback on to the array for execution on success state.
-      this.#thencbs.push((result) => {
+      this.#thencbs.push(result => {
         // in case we dont care avobt the successtate, and only care about fail state, or in other words our thencb is null we directly resolve the promise.
         if (thencb == null) {
           resolve(result);
@@ -102,7 +102,7 @@ class MyPromise {
       });
 
       // push callback on to the array for execution on fail state.
-      this.#catchcbs.push((result) => {
+      this.#catchcbs.push(result => {
         // in case we dont care avobt the rejectstate, and only care about success state, or in other words our catchcb is null we directly reject the promise.
         if (catchcb == null) {
           reject(result);
@@ -226,6 +226,7 @@ class MyPromise {
   }
 }
 
+// Custom error class to throw error in case any promise gives error.
 class UncaughtPromiseError extends Error {
   constructor(error) {
     super(error);
